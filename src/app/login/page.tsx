@@ -1,117 +1,145 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { motion, Variants } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 
-export default function LoginPage() {
+export default function Login() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
+  const containerVariants: Variants = {
+    initial: { opacity: 1 },
+    animate: {
+      opacity: 1,
+      transition: {
+        duration: 0.3
+      }
     }
-  }, [searchParams]);
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const formVariants: Variants = {
+    initial: { y: 20, opacity: 0 },
+    animate: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12
+      }
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setLoading(true);
+    setError('');
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (signInError) throw signInError;
-
-      if (data.user) {
-        // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError) throw profileError;
-
-        // Redirect to home page
-        router.push('/');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during login');
+      if (error) throw error;
+      router.push('/voice-order');
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#0E1B14] flex items-center justify-center px-4">
-      <div className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] rounded-xl shadow-2xl p-8 w-full max-w-md text-white backdrop-blur-sm bg-opacity-90">
-        <div className="flex items-center mb-6">
-          <Link href="/" className="flex items-center justify-center mr-4 p-1 rounded transition-all duration-200 transform hover:scale-125">
-            ←
-          </Link>
-          <h2 className="text-3xl font-bold text-center flex-1">Welcome Back</h2>
-          <span className="w-8 mr-3" aria-hidden="true"></span>
+    <motion.div 
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#0E1B14] px-4 relative"
+    >
+      <Link 
+        href="/" 
+        className="absolute top-8 left-8 flex items-center text-white hover:text-white/90 transition-all hover:scale-110 group"
+      >
+        <span className="font-bold">Back to Home</span>
+      </Link>
+
+      <motion.div 
+        variants={formVariants}
+        className="bg-gradient-to-br from-[#DBDBD1] via-[#C5C5BB] to-[#AEAE9D] w-full max-w-md rounded-2xl shadow-lg p-8 space-y-6 backdrop-blur-sm"
+      >
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-[#14281D]">Welcome Back</h1>
+          <p className="mt-2 text-[#14281D]">Sign in to continue to your account</p>
         </div>
-        {successMessage && (
-          <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-white text-sm">
-            {successMessage}
-          </div>
-        )}
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-white text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-6">
+
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-[#14281D]">
               Email
             </label>
             <input
-              type="email"
               id="email"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
               required
+              className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
               placeholder="Enter your email"
             />
           </div>
+
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-[#14281D]">
               Password
             </label>
             <input
-              type="password"
               id="password"
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
               required
+              className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
               placeholder="Enter your password"
             />
           </div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 bg-red-100 border border-red-300 rounded-lg text-red-600 text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-white text-[#1B3627] py-2 rounded-lg hover:bg-opacity-90 transition-all duration-200 font-medium"
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white
+              bg-[#14281D] hover:bg-[#2C4A3A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Log In
+            {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
-        <p className="mt-4 text-center text-white/80">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-white font-bold">
+
+        <div className="text-center text-sm">
+          <span className="text-[#14281D]">Don't have an account? </span>
+          <Link href="/register" className="font-medium text-[#14281D] hover:text-[#14281D] transition-colors">
             Register
           </Link>
-        </p>
-      </div>
-    </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 } 

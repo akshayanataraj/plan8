@@ -1,36 +1,59 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { motion, Variants } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 
-export default function RegisterPage() {
+export default function Register() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
-    fullName: '',
-    address: '',
-    countryCode: '+1',
-    phoneNumber: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    address: '',
+    country_code: '',
+    phone_number: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const containerVariants: Variants = {
+    initial: { opacity: 1 },
+    animate: {
+      opacity: 1,
+      transition: {
+        duration: 0.3
+      }
+    }
+  };
+
+  const formVariants: Variants = {
+    initial: { y: 20, opacity: 0 },
+    animate: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12
+      }
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError('');
 
     try {
       // Basic validation
@@ -46,218 +69,210 @@ export default function RegisterPage() {
         return;
       }
 
-      // Sign up the user
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName
-          }
-        }
       });
 
-      if (signUpError) {
-        console.error('Signup error:', signUpError);
-        throw signUpError;
+      if (signUpError) throw signUpError;
+
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              name: formData.name,
+              address: formData.address,
+              country_code: formData.country_code,
+              phone_number: formData.phone_number
+            }
+          ]);
+
+        if (profileError) throw profileError;
+
+        router.push('/login?registered=true');
       }
-
-      console.log('Auth response:', authData); // Debug log
-
-      if (!authData.user?.id) {
-        throw new Error('No user ID returned from signup');
-      }
-
-      // Create the profile - note we don't include email as it's in auth.users
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            name: formData.fullName,
-            address: formData.address,
-            country_code: formData.countryCode,
-            phone_number: formData.phoneNumber,
-          }
-        ]);
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        throw profileError;
-      }
-
-      // Redirect to login page
-      router.push('/login?registered=true');
-    } catch (err) {
-      console.error('Registration error:', err);
-      setError(
-        err instanceof Error 
-          ? err.message 
-          : 'An error occurred during registration. Please try again.'
-      );
+    } catch (error: any) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const countryCodes = [
-    { code: '+1', country: 'USA' },
-    { code: '+44', country: 'UK' },
-    { code: '+91', country: 'India' },
-    { code: '+61', country: 'Australia' },
-    { code: '+86', country: 'China' },
-    // Add more country codes as needed
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#0E1B14] flex items-center justify-center px-4 py-8">
-      <div className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] rounded-xl shadow-2xl p-8 w-full max-w-md text-white backdrop-blur-sm bg-opacity-90">
-        <div className="flex items-center mb-6">
-          <Link href="/" className="flex items-center justify-center mr-4 p-1 rounded transition-all duration-200 transform hover:scale-125">
-            ←
-          </Link>
-          <h2 className="text-3xl font-bold text-center flex-1">Create Account</h2>
-          <span className="w-8 mr-3" aria-hidden="true"></span>
+    <motion.div 
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#0E1B14] px-4 py-8 relative"
+    >
+      <Link 
+        href="/" 
+        className="absolute top-8 left-8 flex items-center text-white hover:text-white/90 transition-all hover:scale-110 group"
+      >
+        <span className="font-bold">Back to Home</span>
+      </Link>
+
+      <motion.div 
+        variants={formVariants}
+        className="bg-gradient-to-br from-[#DBDBD1] via-[#C5C5BB] to-[#AEAE9D] w-full max-w-4xl rounded-2xl shadow-lg p-8 space-y-6 backdrop-blur-sm"
+      >
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-[#14281D]">Create Account</h1>
+          <p className="mt-2 text-[#14281D]">Join us and start ordering with voice</p>
         </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-white text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
-              required
-              placeholder="Enter your email"
-            />
-          </div>
 
-          <div>
-            <label htmlFor="fullName" className="block text-sm font-medium mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
-              required
-              placeholder="Enter your full name"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-[#14281D]">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="Enter your full name"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium mb-1">
-              Address
-            </label>
-            <input
-              type="text"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
-              required
-              placeholder="Enter your address"
-            />
-          </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-[#14281D]">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="Enter your email"
+              />
+            </div>
 
-          <div className="flex gap-2">
-            <div className="w-1/3">
-              <label htmlFor="countryCode" className="block text-sm font-medium mb-1">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-[#14281D]">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="Create a password"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#14281D]">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="Confirm your password"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label htmlFor="address" className="block text-sm font-medium text-[#14281D]">
+                Address
+              </label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="Enter your address"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="country_code" className="block text-sm font-medium text-[#14281D]">
                 Country Code
               </label>
-              <select
-                id="countryCode"
-                name="countryCode"
-                value={formData.countryCode}
+              <input
+                type="text"
+                id="country_code"
+                name="country_code"
+                value={formData.country_code}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white"
-              >
-                {countryCodes.map(country => (
-                  <option key={country.code} value={country.code} className="bg-[#1B3627]">
-                    {country.code} ({country.country})
-                  </option>
-                ))}
-              </select>
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="+1"
+              />
             </div>
-            <div className="w-2/3">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium mb-1">
+
+            <div>
+              <label htmlFor="phone_number" className="block text-sm font-medium text-[#14281D]">
                 Phone Number
               </label>
               <input
                 type="tel"
-                id="phoneNumber"
-                name="phoneNumber"
-                value={formData.phoneNumber}
+                id="phone_number"
+                name="phone_number"
+                value={formData.phone_number}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
                 required
-                placeholder="Enter your phone number"
+                className="mt-1 block w-full px-3 py-2 bg-white/60 border border-gray-300 rounded-lg text-[#14281D] placeholder-gray-500
+                  focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                placeholder="123-456-7890"
               />
             </div>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
-              required
-              placeholder="Enter your password"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-4 py-2 bg-[#1B3627]/40 border border-white/20 rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent text-white placeholder-white/50"
-              required
-              placeholder="Confirm your password"
-            />
-          </div>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 bg-red-100 border border-red-300 rounded-lg text-red-600 text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-white text-[#1B3627] py-2 rounded-lg transition-all duration-200 font-medium mt-6 ${
-              loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-opacity-90'
-            }`}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white
+              bg-[#14281D] hover:bg-[#2C4A3A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors
+              disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>
-        <p className="mt-4 text-center text-white/80">
-          Already have an account?{' '}
-          <Link href="/login" className="text-white font-bold">
-            Log in
+
+        <div className="text-center text-sm">
+          <span className="text-[#14281D]">Already have an account? </span>
+          <Link href="/login" className="font-medium text-[#14281D] hover:text-[#14281D] transition-colors">
+            Login
           </Link>
-        </p>
-      </div>
-    </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 } 

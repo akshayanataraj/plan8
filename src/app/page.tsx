@@ -50,7 +50,7 @@ export default function Home() {
           </p>
           <div className="flex justify-center sm:justify-center">
             <button className="bg-[#070E0A] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold 
-              hover:bg-[#F1F8F4] hover:text-[#070E0A] hover:scale-105 transform transition-all duration-300 
+              hover:bg-[#DBDBD1] hover:text-[#070E0A] hover:scale-105 transform transition-all duration-300 
               shadow-lg hover:shadow-xl">
               <Link href="/login">
               Try it Now
