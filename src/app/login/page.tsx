@@ -15,7 +15,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#0E1B14] flex items-center justify-center px-4">
       <div className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] rounded-xl shadow-2xl p-8 w-full max-w-md text-white backdrop-blur-sm bg-opacity-90">
-        <h2 className="text-3xl font-bold mb-6 text-center">Welcome Back</h2>
+        <div className="flex items-center mb-6">
+          <Link href="/" className="flex items-center justify-center mr-4 p-1 rounded transition-all duration-200 transform hover:scale-125">
+            ←
+          </Link>
+          <h2 className="text-3xl font-bold text-center flex-1">Welcome Back</h2>
+          <span className="w-8 mr-3" aria-hidden="true"></span>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-1">
@@ -54,7 +60,7 @@ export default function LoginPage() {
         </form>
         <p className="mt-4 text-center text-white/80">
           Don't have an account?{' '}
-          <Link href="/register" className="text-white hover:text-opacity-80 underline">
+          <Link href="/register" className="text-white font-bold">
             Register
           </Link>
         </p>

@@ -50,7 +50,7 @@ export default function Home() {
           </p>
           <div className="flex justify-center sm:justify-center">
             <button className="bg-[#070E0A] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold 
-              hover:bg-[#F1F8F4] hover:text-black hover:scale-105 transform transition-all duration-300 
+              hover:bg-[#F1F8F4] hover:text-[#070E0A] hover:scale-105 transform transition-all duration-300 
               shadow-lg hover:shadow-xl">
               <Link href="/login">
               Try it Now
@@ -93,7 +93,7 @@ export default function Home() {
               key={index}
               variants={fadeInUp}
               className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] p-6 sm:p-8 rounded-xl shadow-lg border border-[#2A4A39] 
-                hover:shadow-2xl hover:scale-105 transform transition-all duration-300 cursor-pointer"
+                hover:shadow-2xl hover:scale-105 transform transition-all duration-300 cursor-pointer text-center"
             >
               <h3 className="font-semibold text-lg sm:text-xl mb-3">{feature.title}</h3>
               <p className="text-gray-300">{feature.desc}</p>
@@ -128,7 +128,7 @@ export default function Home() {
               key={index}
               variants={fadeInUp}
               className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] p-6 sm:p-8 rounded-xl shadow-lg border border-[#2A4A39] 
-                hover:shadow-2xl hover:scale-105 transform transition-all duration-300 cursor-pointer"
+                hover:shadow-2xl hover:scale-105 transform transition-all duration-300 cursor-pointer text-center"
             >
               <span className="text-2xl sm:text-3xl font-bold text-white">{step.num}</span>
               <h3 className="text-lg sm:text-xl font-semibold mt-3">{step.title}</h3>
