@@ -1,5 +1,5 @@
 {
-  "name": "plan8",
+  "name": "forkit",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.3",
     "framer-motion": "^12.23.0",
     "next": "15.3.5",
     "react": "^19.0.0",
