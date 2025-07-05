@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import HeroSlider from './components/HeroSlider';
 import { FaTwitter, FaFacebookF, FaInstagram, FaLinkedinIn, FaGooglePlay, FaApple, FaQrcode } from 'react-icons/fa';
 import { MdEmail, MdLocationOn } from 'react-icons/md';
+import Link from 'next/link';
 
 const fadeInUp = {
   initial: { y: 50, opacity: 0 },
@@ -30,7 +31,7 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1 }}
-        className="py-20 px-2 grid grid-cols-1 md:grid-cols-2 items-center"
+        className="py-20 px-7 grid grid-cols-1 md:grid-cols-2 items-center"
       >
         <motion.div 
           initial={{ x: -100, opacity: 0 }}
@@ -51,7 +52,9 @@ export default function Home() {
             <button className="bg-[#070E0A] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold 
               hover:bg-[#F1F8F4] hover:text-black hover:scale-105 transform transition-all duration-300 
               shadow-lg hover:shadow-xl">
+              <Link href="/login">
               Try it Now
+              </Link>
             </button>
           </div>
         </motion.div>
@@ -89,7 +92,7 @@ export default function Home() {
             <motion.div
               key={index}
               variants={fadeInUp}
-              className="bg-[#1B3326] p-6 sm:p-8 rounded-xl shadow-lg border border-[#2A4A39] 
+              className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] p-6 sm:p-8 rounded-xl shadow-lg border border-[#2A4A39] 
                 hover:shadow-2xl hover:scale-105 transform transition-all duration-300 cursor-pointer"
             >
               <h3 className="font-semibold text-lg sm:text-xl mb-3">{feature.title}</h3>
@@ -124,7 +127,7 @@ export default function Home() {
             <motion.div
               key={index}
               variants={fadeInUp}
-              className="bg-[#1B3326] p-6 sm:p-8 rounded-xl shadow-lg border border-[#2A4A39] 
+              className="bg-gradient-to-br from-[#2C4A3A] via-[#1B3627] to-[#2C4A3A] p-6 sm:p-8 rounded-xl shadow-lg border border-[#2A4A39] 
                 hover:shadow-2xl hover:scale-105 transform transition-all duration-300 cursor-pointer"
             >
               <span className="text-2xl sm:text-3xl font-bold text-white">{step.num}</span>
