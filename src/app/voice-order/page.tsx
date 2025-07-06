@@ -1,15 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, Variants } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 
+declare global {
+  interface Window {
+    customElements: CustomElementRegistry;
+  }
+  
+  namespace JSX {
+    interface IntrinsicElements {
+      'elevenlabs-convai': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        'agent-id': string;
+      }, HTMLElement>;
+    }
+  }
+}
+
 export default function VoiceOrderPage() {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const scriptLoaded = useRef(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [widgetKey, setWidgetKey] = useState(0);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -41,17 +58,29 @@ export default function VoiceOrderPage() {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) {
         router.push('/login');
+      } else {
+        setUserId(session.user.id);
       }
     };
 
     checkUser();
 
-    // Add ElevenLabs script
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
-    script.async = true;
-    script.type = 'text/javascript';
-    document.body.appendChild(script);
+    // Add ElevenLabs script only if not already loaded
+    if (!scriptLoaded.current && !window.customElements.get('elevenlabs-convai')) {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+      script.async = true;
+      script.type = 'text/javascript';
+      script.onload = () => {
+        console.log('🎤 ElevenLabs widget script loaded');
+        scriptLoaded.current = true;
+        setWidgetKey(prev => prev + 1);
+      };
+      script.onerror = (error) => {
+        console.error('❌ Error loading ElevenLabs widget:', error);
+      };
+      document.body.appendChild(script);
+    }
 
     // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
@@ -65,10 +94,21 @@ export default function VoiceOrderPage() {
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      document.body.removeChild(script);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [router]);
+
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.message.includes('WebSocket')) {
+        console.log('🔄 Reconnecting widget due to WebSocket error');
+        setWidgetKey(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
   return (
     <div className="h-screen bg-[#DBDBD1] flex">
@@ -193,8 +233,17 @@ export default function VoiceOrderPage() {
       <div className="w-full lg:w-1/2 bg-[#14281D]">
         <div className="h-full flex items-center justify-center">
           <elevenlabs-convai 
+            key={widgetKey}
             agent-id="agent_01jze22mjqe9hvfr66jfzm4d1f"
             className="w-full h-full"
+            data-user-id={userId}
+            data-debug="true"
+            data-client-data={JSON.stringify({
+              user_id: userId,
+              timestamp: new Date().toISOString(),
+              platform: 'web',
+              source: 'voice_order_page'
+            })}
           ></elevenlabs-convai>
         </div>
       </div>
