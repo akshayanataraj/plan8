@@ -15,7 +15,15 @@ declare global {
   namespace JSX {
     interface IntrinsicElements {
       'elevenlabs-convai': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
-        'agent-id': string;
+        'agent-id'?: string;
+        variant?: string;
+        'dynamic-variables'?: string;
+        'action-text'?: string;
+        'start-call-text'?: string;
+        'end-call-text'?: string;
+        'expand-text'?: string;
+        'listening-text'?: string;
+        'speaking-text'?: string;
       }, HTMLElement>;
     }
   }
@@ -26,7 +34,7 @@ export default function VoiceOrderPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const scriptLoaded = useRef(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [widgetKey, setWidgetKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -55,11 +63,20 @@ export default function VoiceOrderPage() {
   useEffect(() => {
     // Check if user is authenticated
     const checkUser = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        router.push('/login');
-      } else {
+      setIsLoading(true);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          router.push('/login');
+          return;
+        }
+        console.log('🔑 User authenticated:', session.user.id);
         setUserId(session.user.id);
+      } catch (error) {
+        console.error('❌ Error checking user session:', error);
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -74,7 +91,6 @@ export default function VoiceOrderPage() {
       script.onload = () => {
         console.log('🎤 ElevenLabs widget script loaded');
         scriptLoaded.current = true;
-        setWidgetKey(prev => prev + 1);
       };
       script.onerror = (error) => {
         console.error('❌ Error loading ElevenLabs widget:', error);
@@ -95,6 +111,11 @@ export default function VoiceOrderPage() {
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      // Cleanup script on unmount
+      const existingScript = document.querySelector('script[src="https://unpkg.com/@elevenlabs/convai-widget-embed"]');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
     };
   }, [router]);
 
@@ -102,13 +123,30 @@ export default function VoiceOrderPage() {
     const handleError = (event: ErrorEvent) => {
       if (event.message.includes('WebSocket')) {
         console.log('🔄 Reconnecting widget due to WebSocket error');
-        setWidgetKey(prev => prev + 1);
       }
     };
 
     window.addEventListener('error', handleError);
     return () => window.removeEventListener('error', handleError);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-[#DBDBD1] flex items-center justify-center">
+        <div className="text-2xl text-[#1B3627]">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!userId) {
+    router.push('/login');
+    return null;
+  }
+
+  const dynamicVariables = JSON.stringify({
+    id: userId, // This matches the profiles table primary key
+    user_id: userId // This matches the orders table foreign key
+  });
 
   return (
     <div className="h-screen bg-[#DBDBD1] flex">
@@ -232,18 +270,17 @@ export default function VoiceOrderPage() {
       {/* Right Side - Voice AI */}
       <div className="w-full lg:w-1/2 bg-[#14281D]">
         <div className="h-full flex items-center justify-center">
-          <elevenlabs-convai 
-            key={widgetKey}
+          <elevenlabs-convai
             agent-id="agent_01jze22mjqe9hvfr66jfzm4d1f"
-            className="w-full h-full"
-            data-user-id={userId}
-            data-debug="true"
-            data-client-data={JSON.stringify({
-              user_id: userId,
-              timestamp: new Date().toISOString(),
-              platform: 'web',
-              source: 'voice_order_page'
-            })}
+            variant="expanded"
+            dynamic-variables={dynamicVariables}
+            action-text="Ready to order?"
+            start-call-text="Start Chat"
+            end-call-text="End"
+            expand-text="Open Assistant"
+            listening-text="Listening..."
+            speaking-text="Adam is speaking..."
+            style={{ width: '100%', height: '100%' }}
           ></elevenlabs-convai>
         </div>
       </div>
